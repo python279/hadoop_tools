@@ -40,9 +40,9 @@ def hdfs_ls(path):
 def hdfs_rm(path, is_folder):
     try:
         if is_folder:
-            return subprocess.check_call(["hdfs", "dfs", "-rmdir", "--ignore-fail-on-non-empty", path])
+            return subprocess.check_call(["hdfs", "dfs", "-rmdir", "--ignore-fail-on-non-empty", path], stderr=subprocess.PIPE)
         else:
-            return subprocess.check_call(["hdfs", "dfs", "-rm", "-f", path])
+            return subprocess.check_call(["hdfs", "dfs", "-rm", "-f", path], stderr=subprocess.PIPE)
     except:
         logging.error("failed to delete " + path + " due to:")
         trace_log()

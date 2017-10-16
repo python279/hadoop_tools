@@ -124,9 +124,11 @@ if __name__ == '__main__':
                     continue
                 td = now - datetime.strptime(node.date_time, "%Y-%m-%d %H:%M")
                 if td.days >= n:
-                    print "delete %s %s" % (date_time, node.file_path)
                     if delete:
+                        print "delete %s %s" % (node.date_time, node.file_path)
                         hdfs_rm(node.file_path, node.folder)
+                    else:
+                        print "%s %s" % (node.date_time, node.file_path)
                     node.parent = None
 
     # last remove the temp file

@@ -85,7 +85,9 @@ if __name__ == '__main__':
         usage()
         exit(128)
     delete = True if options.action == "delete" else False
-    
+
+    # trim the right last '/'
+    options.path = options.path.rstrip('/')
     tmp = hdfs_ls(options.path)
     with open(tmp, 'r') as f:
         now = datetime.now()

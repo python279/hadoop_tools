@@ -24,7 +24,6 @@ from hdfs3.utils import MyNone
 
 class HDFileSystemExt(HDFileSystem):
     _handle = None
-    _regex = None
 
     def __init__(self, host=MyNone, port=MyNone, connect=True, autoconf=True, pars=None, **kwargs):
         super(HDFileSystemExt, self).__init__(host, port, connect, autoconf, pars, *kwargs)

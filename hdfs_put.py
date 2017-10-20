@@ -20,14 +20,14 @@ from anytree.iterators import PostOrderIter
 from hdfs3_ext import HDFileSystemExt
 
 
-supported_codecs = ('ascii', 'big5', 'gbk', 'gb2312', 'gb18030', 'utf_8')
+supported_codecs = ('big5', 'gbk', 'gb2312', 'gb18030', 'utf_8')
 
 
 def usage():
     print "hdfs_put.py [options] src dest"
     print "  -f encoding: src file's encoding, supported codecs '%s'" % ' '.join(supported_codecs)
     print "  -t encoding: dest file's encoding, supported codecs '%s'" % ' '.join(supported_codecs)
-    print "  -r 'regex patten': regex to be applied on the src file, like '/\x1E/\x01/;/\x0C//;/\x0D//;/\x00//'"
+    print "  -r 'regex patten': regex to be applied on the src file, like '/\\x1E/\\x01/;/\\x0C//;/\\x0D//;/\\x00//'"
 
 
 if __name__ == '__main__':

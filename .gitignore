@@ -1,2 +1,5 @@
-.pyc
+*.pyc
 .idea
+*.txt
+*.tt
+*.log

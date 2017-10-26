@@ -22,6 +22,7 @@ import codecs
 from multiprocessing import Process, Pipe
 from hdfs3 import HDFileSystem
 from hdfs3.utils import MyNone
+from hdfs3.compatibility import FileNotFoundError
 
 
 class EOF(object):
@@ -60,40 +61,50 @@ class HDFileSystemExt(HDFileSystem):
     def put_with_conversion(self, src, dest, from_encoding=None, to_encoding=None, regex=None):
         block_size = 64*2**20
 
+        # sub-process to write HDFS
         def _write(instance_context, dest, child_conn):
             self = instance_context
-            with self.open(dest, 'wb') as f:
-                fp = cStringIO.StringIO()
-                buffer_len = 0
-                while True:
-                    data = child_conn.recv()
-                    if isinstance(data, EOF):
-                        # end of file, break
-                        break
-                    fp.write(data)
-                    buffer_len += len(data)
-                    if buffer_len >= block_size:
+            try:
+                with self.open(dest, 'wb') as f:
+                    fp = cStringIO.StringIO()
+                    buffer_len = 0
+                    while True:
+                        data = child_conn.recv()
+                        if isinstance(data, EOF):
+                            # end of file, break
+                            break
+                        fp.write(data)
+                        buffer_len += len(data)
+                        if buffer_len >= block_size:
+                            f.write(fp.getvalue())
+                            fp.close()
+                            buffer_len = 0
+                            fp = cStringIO.StringIO()
+                    # write last segment
+                    if buffer_len:
                         f.write(fp.getvalue())
                         fp.close()
-                        buffer_len = 0
-                        fp = cStringIO.StringIO()
-                # write last segment
-                if buffer_len:
-                    f.write(fp.getvalue())
-                    fp.close()
+            except:
+                trace_log()
+                exit(128)
 
         parent_conn, child_conn = Pipe()
         child = Process(target=_write, args=(self, dest, child_conn))
         child.start()
+
+        time_start = time.time()
+        # parent handle the file conversion and write to sub-process
         with codecs.open(src, 'r', from_encoding) as f2:
             fp = cStringIO.StringIO()
             buffer_len = 0
+            total_lines = 0
             for line in f2:
                 out = self._string_transcoding(from_encoding, to_encoding, self._regex_sub(regex, line))
                 if len(out) == 0:
                     continue
                 fp.write(out)
                 buffer_len += len(out)
+                total_lines += 1
                 if buffer_len >= block_size:
                     parent_conn.send(fp.getvalue())
                     fp.close()
@@ -108,3 +119,6 @@ class HDFileSystemExt(HDFileSystem):
                 time.sleep(1)
             if child.exitcode != 0:
                 raise Exception("child thread return non-zero value")
+            else:
+                time_end = time.time()
+                return [src, dest, "succeed", total_lines, int(time_end - time_start)]

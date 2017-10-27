@@ -98,23 +98,32 @@ class HDFileSystemExt(HDFileSystem):
             fp = cStringIO.StringIO()
             buffer_len = 0
             total_lines = 0
-            for line in f2:
-                out = self._string_transcoding(from_encoding, to_encoding, self._regex_sub(regex, line))
-                if len(out) == 0:
-                    continue
-                fp.write(out)
-                buffer_len += len(out)
-                total_lines += 1
-                if buffer_len >= block_size:
+            try:
+                for line in f2:
+                    out = self._string_transcoding(from_encoding, to_encoding, self._regex_sub(regex, line))
+                    if len(out) == 0:
+                        continue
+                    fp.write(out)
+                    buffer_len += len(out)
+                    total_lines += 1
+                    if buffer_len >= block_size:
+                        parent_conn.send(fp.getvalue())
+                        fp.close()
+                        buffer_len = 0
+                        fp = cStringIO.StringIO()
+                # send last segment
+                if buffer_len:
                     parent_conn.send(fp.getvalue())
                     fp.close()
-                    buffer_len = 0
-                    fp = cStringIO.StringIO()
-            # send last segment
-            if buffer_len:
-                parent_conn.send(fp.getvalue())
-                fp.close()
-            parent_conn.send(EOF())
+                parent_conn.send(EOF())
+            except:
+                parent_conn.send(EOF())
+                while child.is_alive():
+                    child.terminate()
+                    time.sleep(1)
+                trace_log()
+                raise Exception("parent got exception")
+
             while child.is_alive():
                 time.sleep(1)
             if child.exitcode != 0:
